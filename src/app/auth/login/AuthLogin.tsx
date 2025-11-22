@@ -66,6 +66,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         timer: 1000,
         showConfirmButton: false,
       });
+      router.refresh();
       router.push("/");
     } catch (error: any) {
       console.log(error);
