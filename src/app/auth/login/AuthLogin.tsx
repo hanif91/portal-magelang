@@ -66,8 +66,9 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         timer: 1000,
         showConfirmButton: false,
       });
-      router.refresh();
-      router.push("/");
+      // Gunakan window.location.href untuk memaksa full reload
+      // Ini memastikan cookie terbaca oleh server dan middleware
+      window.location.href = "/";
     } catch (error: any) {
       console.log(error);
       toast.error(
