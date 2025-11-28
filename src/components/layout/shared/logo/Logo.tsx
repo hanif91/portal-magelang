@@ -4,7 +4,7 @@ import { Box, Typography } from "@mui/material";
 
 const Logo = ({ useLink = false }) => {
   return (
-    <Box pb={3} pt={1} sx={{ display: 'flex', justifyContent: 'center' }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Link href={useLink ? "/" : ""} style={{ textDecoration: "none", width: '100%' }}>
         
         <Box 

@@ -15,6 +15,7 @@ import { asErrorMessage } from "@/core/lib/api";
 import { useUserList } from "@/features/user/UserHooks";
 import UserRepository from "@/features/user/UserRepository";
 import type { UserItem } from "@/features/user/UserEntity";
+import { useRolesList } from "@/features/roles/RolesHooks";
 
 // UI MUI
 import {
@@ -34,6 +35,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormControl,
+  FormHelperText,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 
@@ -103,6 +106,7 @@ const mapFormValuesToPayload = (values: UserFormValues) => ({
 // -------------------------------------------------------------
 const UserManagementPage = () => {
   const { data, error, isLoading, isValidating, refresh } = useUserList();
+  const { data: rolesData } = useRolesList(); // Fetch roles data
 
   const repository = useMemo(() => new UserRepository(), []);
 
@@ -269,6 +273,26 @@ const UserManagementPage = () => {
         valueFormatter: (v) => v || "-",
       },
       {
+        field: "keterangan",
+        headerName: "Keterangan",
+        width: 200,
+        renderCell: (params) => (
+          <Stack direction="row" spacing={1} alignItems="center" height="100%">
+            {params.row.isUserPpob && (
+              <Chip label="PPOB" color="info" size="small" variant="outlined" />
+            )}
+            {params.row.isUserTimtagih && (
+              <Chip
+                label="Tim Tagih"
+                color="secondary"
+                size="small"
+                variant="outlined"
+              />
+            )}
+          </Stack>
+        ),
+      },
+      {
         field: "isActive",
         headerName: "Status",
         width: 130,
@@ -289,7 +313,7 @@ const UserManagementPage = () => {
   // -------------------------------------------------------------
   return (
     <PageContainer
-      title="Manajemen User"
+      title="Manajemen User - Portal PDAM MRK"
       description="Pengelolaan data user sistem"
     >
       <Stack spacing={3}>
@@ -435,21 +459,31 @@ const UserManagementPage = () => {
                 )}
               />
 
-              {/* ROLE ID */}
+
+
               <Controller
                 name="roleId"
                 control={control}
-                rules={{ required: "Role ID wajib diisi" }}
+                rules={{ required: "Role ID wajib dipilih" }}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Role ID"
-                    type="number"
-                    required
-                    fullWidth
-                    error={Boolean(errors.roleId)}
-                    helperText={errors.roleId?.message}
-                  />
+                  <FormControl fullWidth error={Boolean(errors.roleId)}>
+                    <InputLabel id="role-select-label">Pilih Role</InputLabel>
+                    <Select
+                      {...field}
+                      labelId="role-select-label"
+                      label="Pilih Role"
+                      value={field.value || ""} // Penting: Handle nilai awal agar tidak error
+                    >
+                      {/* Di sini bagian DINAMIS-nya */}
+                      {rolesData?.map((role) => (
+                        <MenuItem key={role.id} value={role.id}>
+                          {role.nama}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {/* Menampilkan pesan error jika ada */}
+                    <FormHelperText>{errors.roleId?.message}</FormHelperText>
+                  </FormControl>
                 )}
               />
 

@@ -7,7 +7,7 @@ import DashboardMenus from "../../components/dashboard/DashboardMenu";
 const Dashboard = () => {
   return (
     <PageContainer
-      title="Dashboard - Portal PDAM Takalar"
+      title="Dashboard - Portal PDAM MRK"
       description="Portal Aplikasi PDAM Takalar"
     >
       <Box>

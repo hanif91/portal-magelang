@@ -317,7 +317,7 @@ const columns = useMemo<GridColDef<RoleItem>[]>(
 
     return (
         <PageContainer
-            title="Manajemen Roles"
+            title="Manajemen Roles - Portal PDAM MRK"
             description="Pengelolaan data roles sistem"
         >
             <Stack spacing={3}>
@@ -460,6 +460,7 @@ const columns = useMemo<GridColDef<RoleItem>[]>(
                     </LoadingButton>
                 </DialogActions>
             </Dialog>
+
             {/* --- MODAL DETAIL APLIKASI (DUMMY) --- */}
             <Dialog
                 open={Boolean(selectedAppDetail)} // Muncul jika ada aplikasi yang dipilih

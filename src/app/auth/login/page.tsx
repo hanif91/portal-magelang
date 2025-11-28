@@ -9,7 +9,7 @@ import AuthLogin from "./AuthLogin";
 const Login2 = () => {
   return (
     <PageContainer
-      title="Login - Portal PDAM Takalar"
+      title="Login - Portal PDAM MRK"
       description="Autentikasi Login Portal Aplikasi PDAM Takalar"
     >
       <Box

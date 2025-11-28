@@ -52,12 +52,21 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       // simpan token ke Cookie
       Cookies.set("token", token, {
         expires: 7,
-        secure: true,
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production", // Secure only in production
+        httpOnly: false, // Allow client-side access for SSO
+        sameSite: "lax", // Better for redirection flows
         path: "/",
       });
 
       localStorage.setItem("user", JSON.stringify(user));
+
+      Swal.fire({
+        title: "Login berhasil!",
+        text: "Mengalihkan anda ke dashboard..",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
 
       localStorage.setItem("loginSuccess", "true");
       setLoading(false);
@@ -126,33 +135,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
               }
             />
           </Box>
-
-          {/* Remember Me + Forgot */}
-          <Stack
-            justifyContent="space-between"
-            direction="row"
-            alignItems="center"
-            my={2}
-          >
-            <FormGroup>
-              <FormControlLabel
-                control={<Checkbox defaultChecked />}
-                label="Ingat Perangkat ini"
-              />
-            </FormGroup>
-
-            <Typography
-              component={Link}
-              href="/"
-              fontWeight="500"
-              sx={{
-                textDecoration: "none",
-                color: "primary.main",
-              }}
-            >
-              Lupa Password?
-            </Typography>
-          </Stack>
         </Stack>
 
         {/* BUTTON LOGIN */}
@@ -162,6 +144,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             variant="contained"
             size="large"
             type="submit"
+            sx={{ mt: 2 }}
             disabled={loading} // Disable tombol saat loading agar tidak di-spam klik
             startIcon={
               loading ? <CircularProgress size={20} color="inherit" /> : null
