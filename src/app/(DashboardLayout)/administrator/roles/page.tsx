@@ -150,11 +150,17 @@ interface PermissionModalProps {
     appName: string;
 }
 
-const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName }: PermissionModalProps) => {
+const PermissionConfigModal = ({
+    open,
+    onClose,
+    roleId,
+    appId,
+    roleName,
+    appName,
+}: PermissionModalProps) => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<GroupPermission[]>([]);
-    // State untuk melacak checkbox mana yang sedang loading (UX Best Practice)
-    const [updatingState, setUpdatingState] = useState<string | null>(null);
+    const [updatingState, setUpdatingState] = useState<number | null>(null); // Track menuId being updated
 
     // Fetch Data saat Modal Dibuka
     useEffect(() => {
@@ -169,11 +175,9 @@ const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName
     const fetchPermissions = async () => {
         setLoading(true);
         try {
-            // GET Endpoint
             const response = await api.get("/api/portal/manajemen-role/hak-akses", {
-                params: { role_id: roleId, app_id: appId }
+                params: { role_id: roleId, app_id: appId },
             });
-            // Asumsi responsenya langsung array data sesuai JSON contoh
             setData(response.data.data || []);
         } catch (error) {
             console.error("Error fetching permissions:", error);
@@ -183,31 +187,17 @@ const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName
         }
     };
 
-    const handlePermissionChange = async (
+    const updatePermission = async (
+        menuId: number,
+        newPermissions: PermissionType[],
         groupId: number,
-        menuId: number, // Ini akan jadi menu_detail_id
-        permType: PermissionType,
-        currentPermissions: PermissionType[]
     ) => {
-        // 1. Cek apakah sedang loading untuk mencegah spam klik
-        if (updatingState) return;
+        if (updatingState === menuId) return;
+        setUpdatingState(menuId);
 
-        const uniqueKey = `${menuId}-${permType}`;
-        setUpdatingState(uniqueKey);
-
-        // 2. LOGIC PERHITUNGAN ARRAY BARU
-        // Kita hitung dulu array akhirnya seperti apa sebelum dikirim ke backend
-        const hasPermission = currentPermissions.includes(permType);
-
-        const newPermissions = hasPermission
-            ? currentPermissions.filter((p) => p !== permType) // Kalau sudah ada, hapus (Uncheck)
-            : [...currentPermissions, permType]; // Kalau belum ada, tambah (Check)
-
-        // 3. BACKUP DATA LAMA (Untuk Rollback jika error)
         const oldData = [...data];
 
-        // 4. OPTIMISTIC UPDATE (Update Tampilan Duluan)
-        // Biar user merasa aplikasinya cepat, kita ubah UI tanpa nunggu backend balas
+        // Optimistic Update
         setData((prevData) =>
             prevData.map((group) => {
                 if (group.id !== groupId) return group;
@@ -218,36 +208,65 @@ const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName
                         return { ...menu, permission: newPermissions };
                     }),
                 };
-            })
+            }),
         );
 
         try {
-            // 5. HIT API (PUT) SESUAI REQUEST
-            // Payload: { "menu_detail_id": 1, "permission": ["create", "read"] }
             await api.put("/api/portal/manajemen-role/hak-akses", {
                 menu_detail_id: menuId,
-                permission: newPermissions
+                permission: newPermissions,
             });
-
-            // Sukses! Tidak perlu alert agar tidak mengganggu flow user
         } catch (error) {
             console.error("Update failed", error);
             toast.error("Gagal menyimpan perubahan hak akses.");
-
-            // 6. ROLLBACK (Kembalikan ke data lama jika server error)
-            setData(oldData);
+            setData(oldData); // Rollback
         } finally {
             setUpdatingState(null);
         }
     };
 
+    const handleAccessChange = (
+        groupId: number,
+        menuId: number,
+        isChecked: boolean,
+    ) => {
+        // If unchecked, clear permissions. If checked, maybe default to read? Or just empty but enabled.
+        // User request: "kalau aksesnya kosong, maka checkbox nya itu false dan selectnya jadi disable"
+        // "tapi kalau dia true dia bisa select"
+        // "nah kalau posisinya dia punya 3 akses ya terus tiba tiba aksesnya di uncentang, nah otomatis ngeupdate ke endpoint dengan permissionnya kosong"
+
+        // User request: "ketiika aksesnya diaktifkan otomatis aja permission terisi create"
+        const newPermissions: PermissionType[] = isChecked ? ["create", "read", "update", "delete"] : [];
+
+        updatePermission(menuId, newPermissions, groupId);
+    };
+
+    const handleMultiSelectChange = (
+        groupId: number,
+        menuId: number,
+        event: any,
+    ) => {
+        const {
+            target: { value },
+        } = event;
+        const newPermissions = typeof value === "string" ? value.split(",") : value;
+        updatePermission(menuId, newPermissions, groupId);
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <DialogTitle
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                }}
+            >
                 <Box>
                     <Typography variant="h6">Konfigurasi Hak Akses</Typography>
                     <Typography variant="caption" color="text.secondary">
-                        Role: <strong>{roleName}</strong> | Aplikasi: <strong>{appName}</strong>
+                        Role: <strong>{roleName}</strong> | Aplikasi:{" "}
+                        <strong>{appName}</strong>
                     </Typography>
                 </Box>
                 <IconButton onClick={onClose}>
@@ -257,7 +276,7 @@ const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName
 
             <DialogContent dividers sx={{ p: 0 }}>
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+                    <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
                         <CircularProgress />
                     </Box>
                 ) : (
@@ -265,55 +284,122 @@ const PermissionConfigModal = ({ open, onClose, roleId, appId, roleName, appName
                         <Table stickyHeader size="small">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.default' }}>Nama Menu</TableCell>
-                                    <TableCell align="center" width="10%" sx={{ fontWeight: 'bold', bgcolor: 'background.default' }}>Create</TableCell>
-                                    <TableCell align="center" width="10%" sx={{ fontWeight: 'bold', bgcolor: 'background.default' }}>Read</TableCell>
-                                    <TableCell align="center" width="10%" sx={{ fontWeight: 'bold', bgcolor: 'background.default' }}>Update</TableCell>
-                                    <TableCell align="center" width="10%" sx={{ fontWeight: 'bold', bgcolor: 'background.default' }}>Delete</TableCell>
+                                    <TableCell
+                                        sx={{ fontWeight: "bold", bgcolor: "background.default" }}
+                                    >
+                                        Nama Menu
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        width="10%"
+                                        sx={{ fontWeight: "bold", bgcolor: "background.default" }}
+                                    >
+                                        Akses
+                                    </TableCell>
+                                    <TableCell
+                                        align="left"
+                                        width="40%"
+                                        sx={{ fontWeight: "bold", bgcolor: "background.default" }}
+                                    >
+                                        Permissions
+                                    </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {data.map((group) => (
                                     <>
                                         {/* Group Header */}
-                                        <TableRow key={`group-${group.id}`} sx={{ bgcolor: '#f5f5f5' }}>
-                                            <TableCell colSpan={5} sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                                        <TableRow
+                                            key={`group-${group.id}`}
+                                            sx={{ bgcolor: "#f5f5f5" }}
+                                        >
+                                            <TableCell
+                                                colSpan={3}
+                                                sx={{ fontWeight: "bold", color: "primary.main" }}
+                                            >
                                                 📂 {group.group_name}
                                             </TableCell>
                                         </TableRow>
 
                                         {/* Menus Loop */}
-                                        {group.menus.map((menu) => (
-                                            <TableRow key={`menu-${menu.id}`} hover>
-                                                <TableCell sx={{ pl: 4 }}>{menu.menu_name}</TableCell>
+                                        {group.menus.map((menu) => {
+                                            const hasAccess = menu.permission.length > 0;
+                                            const isProcessing = updatingState === menu.id;
 
-                                                {/* Checkbox Loop */}
-                                                {(['create', 'read', 'update', 'delete'] as PermissionType[]).map((type) => {
-                                                    const isChecked = menu.permission.includes(type);
-                                                    const isProcessing = updatingState === `${menu.id}-${type}`;
+                                            return (
+                                                <TableRow key={`menu-${menu.id}`} hover>
+                                                    <TableCell sx={{ pl: 4 }}>{menu.menu_name}</TableCell>
 
-                                                    return (
-                                                        <TableCell key={type} align="center">
-                                                            {isProcessing ? (
-                                                                <CircularProgress size={20} />
-                                                            ) : (
-                                                                <Checkbox
-                                                                    checked={isChecked}
-                                                                    onChange={() => handlePermissionChange(group.id, menu.id, type, menu.permission)}
-                                                                    color="primary"
-                                                                    size="small"
-                                                                />
-                                                            )}
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                            </TableRow>
-                                        ))}
+                                                    {/* Akses Checkbox */}
+                                                    <TableCell align="center">
+                                                        {isProcessing ? (
+                                                            <CircularProgress size={20} />
+                                                        ) : (
+                                                            <Checkbox
+                                                                checked={hasAccess}
+                                                                onChange={(e) =>
+                                                                    handleAccessChange(
+                                                                        group.id,
+                                                                        menu.id,
+                                                                        e.target.checked,
+                                                                    )
+                                                                }
+                                                                color="primary"
+                                                                size="small"
+                                                            />
+                                                        )}
+                                                    </TableCell>
+
+                                                    {/* Permissions Multi-Select */}
+                                                    <TableCell>
+                                                        <FormControl
+                                                            fullWidth
+                                                            size="small"
+                                                            disabled={!hasAccess || isProcessing}
+                                                        >
+                                                            <Select
+                                                                multiple
+                                                                value={menu.permission}
+                                                                onChange={(e) =>
+                                                                    handleMultiSelectChange(group.id, menu.id, e)
+                                                                }
+                                                                input={<OutlinedInput />}
+                                                                renderValue={(selected) => (
+                                                                    <Box
+                                                                        sx={{
+                                                                            display: "flex",
+                                                                            flexWrap: "wrap",
+                                                                            gap: 0.5,
+                                                                        }}
+                                                                    >
+                                                                        {selected.map((value) => (
+                                                                            <Chip
+                                                                                key={value}
+                                                                                label={value}
+                                                                                size="small"
+                                                                            />
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                            >
+                                                                {["create", "read", "update", "delete"].map(
+                                                                    (perm) => (
+                                                                        <MenuItem key={perm} value={perm}>
+                                                                            {perm}
+                                                                        </MenuItem>
+                                                                    ),
+                                                                )}
+                                                            </Select>
+                                                        </FormControl>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </>
                                 ))}
                                 {data.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                                        <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
                                             Tidak ada data menu tersedia.
                                         </TableCell>
                                     </TableRow>
