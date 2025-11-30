@@ -1,6 +1,4 @@
-// import { Helmet } from 'react-helmet';
-import react from 'react'
-
+import React, { useEffect } from 'react';
 
 type Props = {
   description?: string;
@@ -8,16 +6,18 @@ type Props = {
   title?: string;
 };
 
-const PageContainer = ({ title, description, children }: Props) => (
+const PageContainer = ({ title, description, children }: Props) => {
+  useEffect(() => {
+    if (title) {
+      document.title = title;
+    }
+  }, [title]);
 
-  <div>
-
-    <title>{title}</title>
-    <meta name="description" content={description} />
-
-    {children}
-  </div>
-
-);
+  return (
+    <div>
+      {children}
+    </div>
+  );
+};
 
 export default PageContainer;

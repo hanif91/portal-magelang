@@ -52,7 +52,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       // simpan token ke Cookie
       Cookies.set("token", token, {
         expires: 7,
-        secure: process.env.NODE_ENV === "production", // Secure only in production
+        // secure: process.env.NODE_ENV === "production", // Secure only in production
+        secure: false,
         httpOnly: false, // Allow client-side access for SSO
         sameSite: "lax", // Better for redirection flows
         path: "/",
