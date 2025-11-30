@@ -1,0 +1,35 @@
+name: Deploy Next.js App via SSH
+
+# Trigger this workflow on pushes to the specified branch
+on:
+  push:
+    branches:
+      - main #
+
+env:
+  DIRECTORY_PATH: /home/developer/portal-magelang
+  PM2_APP_NAME_SERVICE: fe-portal-magelang
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: SSH Deploy
+        # Use the 'appleboy/ssh-action' action for SSH deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }} 
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }} 
+          script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            cd ${{ env.DIRECTORY_PATH }}
+            git pull
+            npm install
+            npm run build
+            pm2 restart ${{ env.PM2_APP_NAME_SERVICE }}
