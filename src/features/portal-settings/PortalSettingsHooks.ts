@@ -6,8 +6,10 @@ export const useAplikasiList = () => {
     const { data, error, isLoading } = useSWR(
         "/portal/manajemen-aplikasi",
         PortalSettingsRepository.getAplikasiList,
-
-        { revalidateOnFocus: false, revalidateOnReconnect: false, }
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+        }
     );
 
     return {
@@ -23,7 +25,10 @@ export const useTtdLaporan = (aplikasiId?: number) => {
     const { data, error, isLoading, isValidating } = useSWR(
         key,
         () => PortalSettingsRepository.getTtdLaporan(aplikasiId!),
-        { revalidateOnFocus: false, revalidateOnReconnect: false, }
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+        }
     );
 
     const updateTtdLaporan = async (id: string, payload: UpdateTtdLaporanPayload) => {
@@ -44,8 +49,10 @@ export const useTtdParafList = () => {
     const { data, error, isLoading, isValidating, mutate } = useSWR(
         "/portal/settings/paraf",
         PortalSettingsRepository.getParafList,
-
-        { revalidateOnFocus: false, revalidateOnReconnect: false, }
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+        }
     );
 
     return {
@@ -89,6 +96,10 @@ export const useDesktopSettings = () => {
     const { data, error, isLoading, isValidating, mutate } = useSWR(
         "/portal/settings/desktop",
         PortalSettingsRepository.getDesktopSettings,
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+        }
     );
 
     const updateSettings = async (payload: {
