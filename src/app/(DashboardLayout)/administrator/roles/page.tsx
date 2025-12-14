@@ -213,6 +213,7 @@ const PermissionConfigModal = ({
 
         try {
             await api.put("/api/portal/manajemen-role/hak-akses", {
+                role_id: roleId,
                 menu_detail_id: menuId,
                 permission: newPermissions,
             });
