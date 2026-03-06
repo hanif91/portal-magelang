@@ -11,7 +11,7 @@ import {
   ListItemText,
 } from "@mui/material";
 
-import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import { IconKey } from "@tabler/icons-react";
 import Cookies from "js-cookie"; // install: npm i js-cookie
 import { useRouter } from "next/navigation";
 import api from "@/core/lib/api";
@@ -33,17 +33,11 @@ const Profile = () => {
   // LOGOUT FUNCTION
   // =====================================
 const handleLogout = async () => {
-    // Tampilkan loading jika perlu (opsional)
-    // setLoading(true); 
 
     try {
-      // 1) PANGGIL BACKEND (Wajib dipakai)
-      // Ini memberitahu server untuk mematikan sesi/token ini
       await api.post("/api/auth/logout");
       
     } catch (err) {
-      // Jika server error/down, biarkan saja.
-      // Kita tetap lanjut menghapus data di lokal.
       console.warn("Logout backend gagal, melanjutkan logout lokal:", err);
     } finally {
       // 2) BERSIH-BERSIH LOKAL (Pasti dieksekusi, sukses atau gagal)
@@ -52,12 +46,7 @@ const handleLogout = async () => {
       Cookies.remove("token"); 
       
       // Hapus semua cache localStorage
-      localStorage.clear(); // Cara cepat hapus semua (hati-hati jika ada data lain)
-      // Atau satu per satu seperti kodinganmu:
-      // localStorage.removeItem("app_cache");
-      // localStorage.removeItem("menus_cache");
-      // localStorage.removeItem("user");
-      // localStorage.removeItem("loginSuccess");
+      localStorage.clear(); 
 
       // Tutup menu
       setAnchorEl2(null);
@@ -65,8 +54,6 @@ const handleLogout = async () => {
       // 3) Redirect
       router.push("/auth/login");
       
-      // Matikan loading jika ada
-      // setLoading(false);
     }
   };
 
@@ -107,23 +94,9 @@ const handleLogout = async () => {
       >
         <MenuItem>
           <ListItemIcon>
-            <IconUser width={20} />
+            <IconKey width={20} />
           </ListItemIcon>
-          <ListItemText>My Profile</ListItemText>
-        </MenuItem>
-
-        <MenuItem>
-          <ListItemIcon>
-            <IconMail width={20} />
-          </ListItemIcon>
-          <ListItemText>My Account</ListItemText>
-        </MenuItem>
-
-        <MenuItem>
-          <ListItemIcon>
-            <IconListCheck width={20} />
-          </ListItemIcon>
-          <ListItemText>My Tasks</ListItemText>
+          <ListItemText onClick={() => router.push("/profile")}>Reset PWD</ListItemText>
         </MenuItem>
 
         <Box mt={1} py={1} px={2}>
