@@ -27,7 +27,7 @@
     "eslint-config-next": "13.4.12",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
-    "next": "15.1.11",
+    "next": "^15.5.12",
     "nextjs-toploader": "^3.9.17",
     "react": "19.1.0",
     "react-apexcharts": "1.7.0",
